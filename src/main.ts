@@ -6,11 +6,40 @@ class Main {
     myMsg : string;
 
     private cliToConfig(params : any) : Config {
-        return {url: params["_"][0], httpData: params["_"][1], httpVerb: "GET"};
+        return {url: params["_"][0], httpData: params["d"], httpVerb: params["X"]};
     }
 
     private getHttpMessage(config : Config) : string {
-        return config.httpVerb + " " + config.url + " HTTP/1.1\n";
+        const wholeURL = this.myConfig.url;
+        if (this.myConfig.httpVerb == "GET") {
+            if (wholeURL.search(/www/gi) != -1) {
+                const host = wholeURL.split("www.")[1].split("/")[0];
+                const goal = wholeURL.split("www.")[1].split("/")[1];
+                return config.httpVerb + " /" + goal + " HTTP/1.0\nHost: " + host + "\n\n";
+            }
+            else {
+                const host = wholeURL.split("/")[0];
+                const goal = wholeURL.split("/")[1];
+                return config.httpVerb + " /" + goal + " HTTP/1.0\nHost: " + host + "\n\n";
+            }
+        }
+        else {
+            if (wholeURL.search(/www/gi) != -1) {
+                const host = wholeURL.split("//")[1].split("www.")[1].split("/")[0];
+                const goal = wholeURL.split("www.")[1].split("/")[1];
+                return config.httpVerb + " /" + goal + " HTTP/1.1\nHost: " + host + "\nAccept: */*\nContent-Type: application/json;charset=utf-8\nCookie: PHPSESSID=ste1uhg1brkfbvuumk4sleq1i0;\nContent-Length: 189\n\n" + this.myConfig.httpData + "\n";
+
+            }
+            else {
+                const remHTTPS = wholeURL.split("//")[1];
+                console.log(remHTTPS);
+                const host = remHTTPS.split("/")[0];
+                const goal = "view/234/add_song";
+                //const goal = remHTTPS.split("/",1)[1];
+                return config.httpVerb + " /" + goal + " HTTP/1.1\nHost: " + host + "\nAccept: */*\nContent-Type: application/json;charset=utf-8\nCookie: PHPSESSID=ste1uhg1brkfbvuumk4sleq1i0;\nContent-Length: 189\n\n" + this.myConfig.httpData +"\n";
+
+            }
+        }
 
     }
 
@@ -21,34 +50,32 @@ class Main {
 
         const s = net.Socket();
         const fullUrl = this.myConfig.url;
-        var httpsSock;
+        const host = "jointdj.com"
+        s.connect(443, host);
+        const options = {
+            host : host,
+            socket : s,
+            servername : host,
+        };
         const wwwUrl = fullUrl.split("www.")[1];
-        let theMsg = "";
-        if(fullUrl.search(/https/gi)) {
+        const theMsg = this.getHttpMessage(this.myConfig);
+        if(fullUrl.search(/https/gi) != -1) {
             console.log("contains https");
-            if (wwwUrl != undefined) {
-                httpsSock = tls.connect(443, wwwUrl)
-            }
-            else{
-                httpsSock = tls.connect(443, fullUrl);
-            }
-
-            httpsSock.write(this.myMsg);
-            httpsSock.on('data', function(d : any) {
+            const socket = tls.connect(options);
+            socket.write(theMsg);
+            socket.on('data', function(d : any) {
                console.log(d.toString()) ;
             })
-            httpsSock.end();
+            socket.end();
         }
         else {
             if (wwwUrl != undefined) {
-                s.connect(80, wwwUrl);
-                theMsg = this.myMsg + "host: " + wwwUrl;
-                //console.log(theMsg + "\n");
+                const host = wwwUrl.split("/")[0];
+                s.connect(80, host);
             }
             else {
-                s.connect(80, fullUrl);
-                theMsg = this.myMsg + "host: " + fullUrl;
-                // console.log(theMsg+ "\n");
+                const host = fullUrl.split("/")[0];
+                s.connect(80, host);
             }
 
             s.write(theMsg);
@@ -57,6 +84,8 @@ class Main {
             })
             s.end();
         }
+
+
 
         /**
          * Socket example:
@@ -76,18 +105,13 @@ class Main {
         this.myConfig = this.cliToConfig(params);
         this.myMsg = this.getHttpMessage(this.myConfig)
         console.log("it worked!");
-        console.log(this.cliToConfig(params));
+        //console.log(this.cliToConfig(params));
         var conInf = this.cliToConfig(params);
         console.log(this.getHttpMessage(conInf));
-        //console.log(this.myConfig.url.split("www.")[1]);
 
         this.writeMessage(this.myMsg);
-        //var test = "http://www.stuff.com";
-        //console.log(test.split("http://" , 2));
-        //console.log(test.split("http://")[1]);
-        //console.log(test.split("www.")[1]);
-        //console.log(this.myConfig);
-        //console.log("msg: " + this.myMsg);
+        var test = "http://www.stuff.com";
+
     }
 }
 
