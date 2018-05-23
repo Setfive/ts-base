@@ -1,19 +1,62 @@
-const socket = require('net').Socket();
+const net = require('net');
 const tls = require('tls');
 
 class Main {
+    myConfig : Config;
+    myMsg : string;
 
     private cliToConfig(params : any) : Config {
-        return {url: "", httpData: "", httpVerb: "get"};
+        return {url: params["_"][0], httpData: params["_"][1], httpVerb: "GET"};
     }
 
     private getHttpMessage(config : Config) : string {
-        return "";
+        return config.httpVerb + " " + config.url + " HTTP/1.1\n";
+
     }
 
     private writeMessage(message : string) : string {
 
         // detect if HTTPs, then use https://nodejs.org/api/tls.html#tls_tls_connect_options_callback
+
+
+        const s = net.Socket();
+        const fullUrl = this.myConfig.url;
+        var httpsSock;
+        const wwwUrl = fullUrl.split("www.")[1];
+        let theMsg = "";
+        if(fullUrl.search(/https/gi)) {
+            console.log("contains https");
+            if (wwwUrl != undefined) {
+                httpsSock = tls.connect(443, wwwUrl)
+            }
+            else{
+                httpsSock = tls.connect(443, fullUrl);
+            }
+
+            httpsSock.write(this.myMsg);
+            httpsSock.on('data', function(d : any) {
+               console.log(d.toString()) ;
+            })
+            httpsSock.end();
+        }
+        else {
+            if (wwwUrl != undefined) {
+                s.connect(80, wwwUrl);
+                theMsg = this.myMsg + "host: " + wwwUrl;
+                //console.log(theMsg + "\n");
+            }
+            else {
+                s.connect(80, fullUrl);
+                theMsg = this.myMsg + "host: " + fullUrl;
+                // console.log(theMsg+ "\n");
+            }
+
+            s.write(theMsg);
+            s.on('data', function (d: any) {
+                console.log(d.toString());
+            })
+            s.end();
+        }
 
         /**
          * Socket example:
@@ -30,9 +73,21 @@ class Main {
     }
 
     public Main(params : any) : void {
+        this.myConfig = this.cliToConfig(params);
+        this.myMsg = this.getHttpMessage(this.myConfig)
         console.log("it worked!");
-        console.log(params);
-        console.log(params["_"][0]);
+        console.log(this.cliToConfig(params));
+        var conInf = this.cliToConfig(params);
+        console.log(this.getHttpMessage(conInf));
+        //console.log(this.myConfig.url.split("www.")[1]);
+
+        this.writeMessage(this.myMsg);
+        //var test = "http://www.stuff.com";
+        //console.log(test.split("http://" , 2));
+        //console.log(test.split("http://")[1]);
+        //console.log(test.split("www.")[1]);
+        //console.log(this.myConfig);
+        //console.log("msg: " + this.myMsg);
     }
 }
 
@@ -41,7 +96,7 @@ const parsedParams : any = require('minimist')(process.argv.slice(2));
 
 interface Config {
     url : string;
-    httpVerb : "get" | "post";
+    httpVerb : "GET" | "POST";
     httpData : string;
 }
 
