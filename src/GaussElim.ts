@@ -3,15 +3,12 @@ import * as math from 'mathjs'
 class GaussElim {
     matrixRows: number[][] = [];
     matrix: any;
-    resultingMatrix: any;
-    vector: number[] = [];
     n: number = 0;
 
     public Main(): void {
-        this.equationToRow('1x - 3y + 1z + 4a = 4');
-        this.equationToRow('2x - 8y + 8z - 5a = -2');
-        this.equationToRow('-6x + 45y - 15z + 16a = 9');
-        this.equationToRow('3x + 5y - 1z + 6a = 3');
+        this.equationToRow('1x - 3y + 1z = 4');
+        this.equationToRow('2x - 8y + 8z = -2');
+        this.equationToRow('-6x + 3y - 15z = 9');
         this.addRowsToMatrix();
         this.gaussReduction();
 
@@ -47,19 +44,19 @@ class GaussElim {
 
     private addRowsToMatrix(): void {
         this.matrix = math.matrix(this.matrixRows);
-        // console.log(this.matrix);
     }
 
 
     private gaussReduction(): number[] {
+
         for (let i = 0; i < this.n; i++) {
+
             //find element with largest magnitude in column i
             let maxElem = Math.abs(this.matrix.get([i, i]));
             let maxRow = i;
             for (let j = i + 1; j < this.n; j++) {
                 if (Math.abs(this.matrix.get([j, i])) > maxElem) {
                     maxElem = Math.abs(this.matrix.get([j, i]));
-
                     maxRow = j;
                 }
             }
@@ -70,7 +67,6 @@ class GaussElim {
                 const replacer =  this.matrix.get([i, k]);
                 this.matrix.subset(math.index(maxRow, k), replacer);
                 this.matrix.subset(math.index(i, k), temp);
-                // const vecTemp =
             }
 
             //Replace elements in column below row i with 0's
