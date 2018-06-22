@@ -14,7 +14,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/5.0.0/math.min.js"></script>
-    <script src="dist/main.js"></script>
+    <script src="dist/GaussElim.js"></script>
 </head>
 <body>
     <div class="container">
@@ -30,8 +30,8 @@
             <div class="col-sm-6">
                 <form id="solve">
                     <div class="form-group">
-                        <label class="form-label">Enter some equations</label>
-                        <textarea class="form-control" id="equations"></textarea>
+                        <label class="form-label">Enter some equations in the form: ax0 + bx1 - cx2 + ... + dxn = e, where letters represent numbers of your choosing. Please enter the same number of equations as variables and make sure to hit 'enter' between equations!</label>
+                        <textarea class="form-control" id="equations" style="height:120px"></textarea>
                     </div>
                     <div class="form-group">
                         <button class="btn btn-primary">Solve!</button>
@@ -39,14 +39,13 @@
                 </form>
             </div>
             <div class="col-sm-6">
-                <label>Results</label><br>
-                [[ output the solutions here ]]
+                <label>Results:</label><br>
                 <ul id="solutions">
-                    <li>(ex. x=2)</li>
-                    <li>y=3</li>
                 </ul>
                 <hr />
-                [[ figure out how to show the intermdiate matrices here ]]
+                <label>Intermediate Matrices:</label><br>
+                <ul id = "matrices">
+                </ul>
             </div>
         </div>
 
@@ -55,7 +54,55 @@
 <script>
     $(document).ready(function(){
        $("#solve").submit(function(){
-           console.log( $("#equations").val() );
+           const numEq = new GaussElim().equationCounter($("#equations").val());
+           const eqs = new GaussElim().equationReader($("#equations").val());
+           const coeffs = [];
+           for (let i = 0; i < numEq; i++) {
+               coeffs.push(new GaussElim().equationToRow(eqs[i]));
+           }
+           const matrix = new GaussElim().addRowsToMatrix(coeffs);
+           const results = new GaussElim().gaussReduction(numEq, matrix);
+           const x = results[0];
+           let noSolution = false;
+           for (let i = 0; i < x.length; i++) {
+               if (x[i].isNaN || x[i] === Infinity) {
+                   noSolution = true;
+               }
+           }
+           const realResults = [];
+           document.getElementById("solutions").innerHTML = "";
+           if (noSolution === true) {
+               document.getElementById("solutions").innerHTML = "This system of equations is inconsistent. Please try new equations";
+               document.getElementById("matrices").innerHTML = "This system of equations is inconsistent. Please try new equations";
+
+               return false;
+           }
+           else {
+               for (let i = 0; i < x.length; i++) {
+                   realResults[i] = "<li>x<sub>" + i + "</sub>" + " = " + x[i] + "</li>";
+                   document.getElementById("solutions").innerHTML += realResults[i];
+               }
+               const intermediatesRaw = results[1];
+               const intermediates = [];
+               for (let i = 0; i < intermediatesRaw.length; i++) {
+                   intermediates[i] = "[";
+                   for (let j = 0; j < intermediatesRaw.length; j++) {
+                       if (j !== intermediatesRaw.length - 1) {
+                           intermediates[i] = intermediates[i] + intermediatesRaw[i]._data[j] + "<br/>";
+                       } else {
+                           intermediates[i] = intermediates[i] + intermediatesRaw[i]._data[j];
+                       }
+                   }
+                   intermediates[i] += "]";
+
+               }
+               const intermediateMatrices = [];
+               document.getElementById("matrices").innerHTML = "";
+               for (let i = 0; i < intermediates.length; i++) {
+                   intermediateMatrices[i] = "<li style=\"padding-bottom:10px\">Matrix " + (i + 1) + ":<br/>" + intermediates[i] + "</li>";
+                   document.getElementById("matrices").innerHTML += intermediateMatrices[i];
+               }
+           }
            return false;
        });
     });

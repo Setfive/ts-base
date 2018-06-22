@@ -1,3 +1,15 @@
+5x - 2y + 1z = 4
+2x - 1y + 5z = -2
+-4x + 3y - 15z = 7
+x1 = 1/2
+x2 = -7/6
+x3 = -5/6
+
+1x0 - 3x1 + 1x2 = 4
+2x0 - 8x1 + 8x2 = -2
+-6x0 + 3x1 - 15x2 = 9
+
+
 const net = require('net');
 const tls = require('tls');
 

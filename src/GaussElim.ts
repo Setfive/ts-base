@@ -1,17 +1,17 @@
-import * as math from 'mathjs'
+declare const math: any;
+
 
 class GaussElim {
-    matrixRows: number[][] = [];
-    matrix: any;
-    n: number = 0;
 
     public Main(): void {
-        this.equationToRow('1x - 3y + 1z = 4');
-        this.equationToRow('2x - 8y + 8z = -2');
-        this.equationToRow('-6x + 3y - 15z = 9');
-        this.addRowsToMatrix();
-        this.gaussReduction();
+    }
 
+    public equationCounter(equations: string): number {
+        return equations.split(/\r\n|\r|\n/).length;
+    }
+
+    public equationReader(equations: string): string[] {
+        return equations.split(/\r\n|\r|\n/);
     }
 
     private equationToRow(equation: string): number[] {
@@ -19,18 +19,34 @@ class GaussElim {
         const coeffs: number[] = [];
         for (let i = 0; i < lhs.length - 1; i++) {
             if (lhs[i] === '+') {
-                coeffs.push(parseInt(lhs[i + 1], 10));
+                if(lhs[i + 1].split('x')[0] === "") {
+                    coeffs.push(1);
+                }
+                else {
+                    coeffs.push(parseInt(lhs[i + 1].split('x')[0], 10));
+                }
                 i++;
             }
             else if (lhs[i] === '-') {
-                coeffs.push(-1 * parseInt(lhs[i + 1], 10));
+                if(lhs[i + 1].split('x')[0] === "") {
+                    coeffs.push(-1);
+                } else {
+                    coeffs.push(-1 * parseInt(lhs[i + 1].split('x')[0], 10));
+                }
                 i++;
             }
             else {
-                coeffs.push(parseInt(lhs[i], 10));
+                if(lhs[i].split('x')[0] === "") {
+                    coeffs.push(1);
+                }
+                else if(lhs[i].split('x')[0] === "-") {
+                    coeffs.push(-1);
+                }
+                else {
+                    coeffs.push(parseInt(lhs[i].split('x')[0], 10));
+                }
             }
         }
-        this.n ++;
         const rhs = equation.split('= ')[1];
         if (rhs.split('-')[0] === '') {
             coeffs.push(-1 * parseInt(rhs.split('-')[1]));
@@ -38,68 +54,75 @@ class GaussElim {
         else {
             coeffs.push(parseInt(rhs));
         }
-        this.matrixRows.push(coeffs);
         return coeffs;
     }
 
-    private addRowsToMatrix(): void {
-        this.matrix = math.matrix(this.matrixRows);
+    private addRowsToMatrix(coeffs: number[]): any {
+        return math.matrix(coeffs);
     }
 
 
-    private gaussReduction(): number[] {
 
-        for (let i = 0; i < this.n; i++) {
+    private gaussReduction(rows: number, matrix: any): [number[], any[]] {
+        const intermediateMatrices: any[] = [];
+
+        let tempMatrix = math.clone(matrix);
+        intermediateMatrices.push(tempMatrix);
+
+        for (let i = 0; i < rows; i++) {
 
             //find element with largest magnitude in column i
-            let maxElem = Math.abs(this.matrix.get([i, i]));
+            let maxElem = Math.abs(matrix.get([i, i]));
             let maxRow = i;
-            for (let j = i + 1; j < this.n; j++) {
-                if (Math.abs(this.matrix.get([j, i])) > maxElem) {
-                    maxElem = Math.abs(this.matrix.get([j, i]));
+            for (let j = i + 1; j < rows; j++) {
+                if (Math.abs(matrix.get([j, i])) > maxElem) {
+                    maxElem = Math.abs(matrix.get([j, i]));
                     maxRow = j;
                 }
             }
 
             //Row Replacement
-            for (let k = i; k < this.n + 1; k++) {
-                const temp = this.matrix.get([maxRow, k]);
-                const replacer =  this.matrix.get([i, k]);
-                this.matrix.subset(math.index(maxRow, k), replacer);
-                this.matrix.subset(math.index(i, k), temp);
+            for (let k = i; k < rows + 1; k++) {
+                const temp = matrix.get([maxRow, k]);
+                const replacer =  matrix.get([i, k]);
+                matrix.subset(math.index(maxRow, k), replacer);
+                matrix.subset(math.index(i, k), temp);
             }
 
             //Replace elements in column below row i with 0's
-            for (let m = i + 1; m < this.n; m++) {
-                const temp = -1 * this.matrix.get([m, i]) / this.matrix.get([i, i]);
-                for (let l = i; l < this.n + 1; l++) {
+            for (let m = i + 1; m < rows; m++) {
+                const temp = -1 * matrix.get([m, i]) / matrix.get([i, i]);
+                for (let l = i; l < rows + 1; l++) {
                     if (i === l) {
-                        this.matrix.subset(math.index(m, l), 0);
+                        matrix.subset(math.index(m, l), 0);
                     }
                     else {
-                        const replacer = this.matrix.get([m, l]) + (temp * this.matrix.get([i, l]));
-                        this.matrix.subset(math.index(m, l), replacer);
+                        const replacer = matrix.get([m, l]) + (temp * matrix.get([i, l]));
+                        matrix.subset(math.index(m, l), replacer);
                     }
                 }
             }
+            tempMatrix = math.clone(matrix);
+            intermediateMatrices.push(tempMatrix);
         }
 
         //Backward Substitution to solve equation
         const x: number[] = [];
-        for (let i = this.n - 1; i > -1; i--) {
-            x[i] = Math.round(this.matrix.get([i, this.n]) / this.matrix.get([i, i]) * 1000) / 1000;
+        for (let i = rows - 1; i > -1; i--) {
+            x[i] = Math.round(matrix.get([i, rows]) / matrix.get([i, i]) * 10000) / 10000;
             for (let k = i - 1; k > -1; k--) {
-                const replacer = this.matrix.get([k, this.n]) - (x[i] * this.matrix.get([k, i]));
-                this.matrix.subset(math.index(k, this.n), replacer);
+                const replacer = matrix.get([k, rows]) - (x[i] * matrix.get([k, i]));
+                matrix.subset(math.index(k, rows), replacer);
 
             }
         }
-        console.log(this.matrix);
-        console.log(x);
-        return x;
+        if (math.compare(intermediateMatrices[intermediateMatrices.length - 1], intermediateMatrices[intermediateMatrices.length - 2]) !== 0) {
+            intermediateMatrices.pop();
+        }
+
+        return [x, intermediateMatrices];
     }
 
 
 }
 
-(new GaussElim().Main());
